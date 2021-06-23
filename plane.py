@@ -1,4 +1,4 @@
-# plane04.py   增加敌方小飞机
+# plane05.py   背景移动
 import pygame
 import sys
 import traceback
@@ -55,6 +55,8 @@ screen = pygame.display.set_mode(bg_size)
 pygame.display.set_caption("飞机大战")
 
 background = pygame.image.load("images/background.png").convert()
+bg1_top = 0
+bg2_top = -700
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -144,14 +146,17 @@ is_Triple_Tap = True
 clock = pygame.time.Clock()
 
 def main():
-    global bullet1_index, bullet2_index, delay
+    global bullet1_index, bullet2_index, delay, bg1_top, bg2_top
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
 
-        screen.blit(background, (0, 0))
+        bg1_top = (bg1_top + 1) if bg1_top <= 700 else -700
+        bg2_top = (bg2_top + 1) if bg2_top <= 700 else -700
+        screen.blit(background, (0, bg1_top))
+        screen.blit(background, (0, bg2_top))
 
         
         if life_num and not paused:
