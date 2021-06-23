@@ -1,11 +1,21 @@
-# plane03.py   增加己方飞机控制发射子弹
+# plane04.py   增加敌方小飞机
 import pygame
 import sys
 import traceback
 import myplane
 import bullet
+import enemy
+import supply
 
 from pygame.locals import *
+from random import *
+
+def add_small_enemies(group1, group2, num):
+    for i in range(num):
+        e1 = enemy.SmallEnemy(bg_size)
+        group1.add(e1)
+        group2.add(e1)
+
 
 def draw_score_bombs_lifes():
     # 绘制全屏炸弹数量
@@ -25,9 +35,17 @@ def draw_score_bombs_lifes():
     score_text = score_font.render("Score : %s" % str(score), True, WHITE)
     screen.blit(score_text, (10,5))
 
+
 def draw_me():
     #绘制我方飞机
     screen.blit(me.image1, me.rect)
+
+
+def draw_small():
+    for each in small_enemies:
+        if each.active:
+            each.move()
+            screen.blit(each.image, each.rect)
 
 pygame.init()
 pygame.mixer.init()
@@ -94,7 +112,11 @@ life_num = 3
 #生成我方飞机
 me = myplane.MyPlane(bg_size)
 
-clock = pygame.time.Clock()
+enemies = pygame.sprite.Group()
+
+# 生成敌方小飞机
+small_enemies = pygame.sprite.Group()
+add_small_enemies(small_enemies, enemies, 15)
 
 # 生成普通子弹
 bullet1 = []
@@ -131,8 +153,7 @@ def main():
 
         screen.blit(background, (0, 0))
 
-        draw_score_bombs_lifes()
-        draw_me()
+        
         if life_num and not paused:
             # 检测用户的键盘操作
             key_pressed = pygame.key.get_pressed()
@@ -164,8 +185,11 @@ def main():
                 b.move()
                 screen.blit(b.image, b.rect)
 
-        delay = (delay - 1) if delay else 100
+        draw_score_bombs_lifes()
+        draw_me()
+        draw_small()
 
+        delay = (delay - 1) if delay else 100
 
         pygame.display.flip()
         clock.tick(60)
