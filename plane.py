@@ -1,4 +1,5 @@
-# plane06.py   检测是否击中敌机
+# plane08.py   最高分入档 继续游戏或者退出
+import builtins
 import pygame
 import sys
 import traceback
@@ -73,6 +74,69 @@ def draw_small():
                 score += 1000
                 each.reset()
 
+
+def continueOrQuit():
+    global record_score, score, life_num
+    # 背景音乐停止
+    pygame.mixer.music.stop()
+
+    # 停止全部音效
+    pygame.mixer.stop()
+
+    # 停止发放补给
+    pygame.time.set_timer(SUPPLY_TIME, 0)
+    
+    record_score_text = score_font.render("Best : %d" % record_score, True, (255, 255, 255))
+    screen.blit(record_score_text, (50, 50))
+
+    # 绘制结束画面
+    gameover_text1 = gameover_font.render("Your Score", True, (255, 255, 255))
+    gameover_text1_rect = gameover_text1.get_rect()
+    gameover_text1_rect.left, gameover_text1_rect.top = \
+        (width - gameover_text1_rect.width) // 2, height // 3
+    screen.blit(gameover_text1, gameover_text1_rect)
+
+    gameover_text2 = gameover_font.render(str(score), True, (255, 255, 255))
+    gameover_text2_rect = gameover_text2.get_rect()
+    gameover_text2_rect.left, gameover_text2_rect.top = \
+        (width - gameover_text2_rect.width) // 2, \
+        gameover_text1_rect.bottom + 10
+    screen.blit(gameover_text2, gameover_text2_rect)
+
+    again_rect.left, again_rect.top = \
+        (width - again_rect.width) // 2, \
+        gameover_text2_rect.bottom + 50
+    screen.blit(again_image, again_rect)
+
+    gameover_rect.left, gameover_rect.top = \
+        (width - again_rect.width) // 2, \
+        again_rect.bottom + 10
+    screen.blit(gameover_image, gameover_rect)
+
+    # 检测用户的鼠标操作
+    # 如果用户按下鼠标左键
+    if pygame.mouse.get_pressed()[0]:
+        # 如果玩家得分高于历史得分，则存档
+        if score > record_score:
+            record_score = score
+            with open("record.txt", "w") as f:
+                f.write(str(score))
+        # 获取鼠标坐标
+        pos = pygame.mouse.get_pos()
+        # 如果用户点击“重新开始”
+        if again_rect.left < pos[0] < again_rect.right and \
+                again_rect.top < pos[1] < again_rect.bottom:
+            # 调用main函数，重新开始游戏
+            life_num = 3
+            score = 0
+            main()
+        # 如果用户点击“结束游戏”
+        elif gameover_rect.left < pos[0] < gameover_rect.right and \
+                gameover_rect.top < pos[1] < gameover_rect.bottom:
+            # 退出游戏
+            pygame.quit()
+            sys.exit()
+
 pygame.init()
 pygame.mixer.init()
 
@@ -135,6 +199,17 @@ life_image = pygame.image.load("images/life.png").convert_alpha()
 life_rect = life_image.get_rect()
 life_num = 3
 
+# 读取历史最高分
+with open("record.txt", "r") as f:
+    record_score = int(f.read())
+
+# 游戏结束画面
+gameover_font = pygame.font.Font("font/font.TTF", 48)
+again_image = pygame.image.load("images/again.png").convert_alpha()
+again_rect = again_image.get_rect()
+gameover_image = pygame.image.load("images/gameover.png").convert_alpha()
+gameover_rect = gameover_image.get_rect()
+
 #生成我方飞机
 me = myplane.MyPlane(bg_size)
 
@@ -163,6 +238,12 @@ for i in range(BULLET2_NUM // 2):
 # 用于延迟
 delay = 100
 
+# 每30秒发放一个补给包
+bullet_supply = supply.Bullet_Supply(bg_size)
+bomb_supply = supply.Bomb_Supply(bg_size)
+SUPPLY_TIME = USEREVENT
+pygame.time.set_timer(SUPPLY_TIME, 30 * 1000)
+
 # 标志是否使用超级子弹
 is_double_bullet = False
 is_Triple_Tap = False
@@ -183,7 +264,7 @@ me_destroy_index = 0
 
 
 def main():
-    global bullet1_index, bullet2_index, delay
+    global bullet1_index, bullet2_index, delay, bg1_top, bg2_top, bullets
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -239,6 +320,8 @@ def main():
                 for e in enemies_down:
                     e.active = False
             draw_me()
+        elif life_num == 0:
+            continueOrQuit()
         draw_score_bombs_lifes()
 
         delay = (delay - 1) if delay else 100
