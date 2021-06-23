@@ -1,4 +1,4 @@
-# plane04.py   增加敌方小飞机
+# plane06.py   检测是否击中敌机
 import pygame
 import sys
 import traceback
@@ -42,10 +42,20 @@ def draw_me():
 
 
 def draw_small():
+    global e1_destroy_index, score
     for each in small_enemies:
         if each.active:
             each.move()
             screen.blit(each.image, each.rect)
+        # 毁灭
+        elif not (delay % 3):
+            if e1_destroy_index == 0:
+                enemy1_down_sound.play()
+            screen.blit(each.destroy_images[e1_destroy_index], each.rect)
+            e1_destroy_index = (e1_destroy_index + 1) % 4
+            if e1_destroy_index == 0:
+                score += 1000
+                each.reset()
 
 pygame.init()
 pygame.mixer.init()
@@ -143,6 +153,13 @@ is_Triple_Tap = True
 
 clock = pygame.time.Clock()
 
+# 中单索引图片
+e1_destroy_index = 0
+e2_destroy_index = 0
+e3_destroy_index = 0
+me_destroy_index = 0
+
+
 def main():
     global bullet1_index, bullet2_index, delay
     while True:
@@ -182,12 +199,17 @@ def main():
 
             # 检测子弹是否击中敌机
             for b in bullets:
-                b.move()
-                screen.blit(b.image, b.rect)
-
+                if b.active:
+                    b.move()
+                    screen.blit(b.image, b.rect)
+                    enemy_hit = pygame.sprite.spritecollide(b, enemies, False, pygame.sprite.collide_mask)
+                    if enemy_hit:
+                        b.active = False
+                        for e in enemy_hit:
+                            e.active = False
+            draw_small()
         draw_score_bombs_lifes()
         draw_me()
-        draw_small()
 
         delay = (delay - 1) if delay else 100
 
