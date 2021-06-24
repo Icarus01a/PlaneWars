@@ -1,4 +1,4 @@
-# plane11.py   使用炸弹
+# plane11.py   最终版 使用超级子弹
 import builtins
 import pygame
 import sys
@@ -391,7 +391,8 @@ me_destroy_index = 0
 
 def main():
     global bullet1_index, bullet2_index, delay, bg1_top, bg2_top, \
-        bullets, paused, paused_image, level, switch_image, bomb_num
+        bullets, paused, paused_image, level, switch_image, bomb_num, \
+            is_double_bullet, is_Triple_Tap
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -432,6 +433,13 @@ def main():
                     bomb_supply.reset()
                 else:
                     bullet_supply.reset()
+            elif event.type == DOUBLE_BULLET_TIME:
+                if is_Triple_Tap:
+                    is_Triple_Tap = False
+                    pygame.time.set_timer(DOUBLE_BULLET_TIME, 18 * 1000)
+                else:
+                    is_double_bullet = False
+                    pygame.time.set_timer(DOUBLE_BULLET_TIME, 0)
             elif event.type == INVINCIBLE_TIME:
                 me.invincible = False
                 pygame.time.set_timer(INVINCIBLE_TIME, 0)
@@ -502,9 +510,22 @@ def main():
                 screen.blit(bomb_supply.image, bomb_supply.rect)
                 if pygame.sprite.collide_mask(bomb_supply, me):
                     get_bomb_sound.play()
-                    if bomb_num < 3:
+                    if bomb_num < 9:
                         bomb_num += 1
                     bomb_supply.active = False
+
+            # 绘制超级子弹补给并检测是否获得
+            if bullet_supply.active:
+                bullet_supply.move()
+                screen.blit(bullet_supply.image, bullet_supply.rect)
+                if pygame.sprite.collide_mask(bullet_supply, me):
+                    get_bullet_sound.play()
+                    if is_double_bullet:
+                        is_Triple_Tap = True
+                    else:
+                        is_double_bullet = True
+                    pygame.time.set_timer(DOUBLE_BULLET_TIME, 18 * 1000)
+                    bullet_supply.active = False
 
              # 发射子弹
             if not (delay % 10):
