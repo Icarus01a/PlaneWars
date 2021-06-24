@@ -1,4 +1,4 @@
-# plane08.py   最高分入档 继续游戏或者退出
+# plane09.py   暂停继续
 import builtins
 import pygame
 import sys
@@ -145,6 +145,8 @@ screen = pygame.display.set_mode(bg_size)
 pygame.display.set_caption("飞机大战")
 
 background = pygame.image.load("images/background.png").convert()
+bg1_top = 0
+bg2_top = -700
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -184,6 +186,13 @@ score_font = pygame.font.Font("font/font.ttf", 36)
 
 # 标志是否暂停游戏
 paused = False
+pause_nor_image = pygame.image.load("images/pause_nor.png").convert_alpha()
+pause_pressed_image = pygame.image.load("images/pause_pressed.png").convert_alpha()
+resume_nor_image = pygame.image.load("images/resume_nor.png").convert_alpha()
+resume_pressed_image = pygame.image.load("images/resume_pressed.png").convert_alpha()
+paused_rect = pause_nor_image.get_rect()
+paused_rect.left, paused_rect.top = width - paused_rect.width - 10, 10
+paused_image = pause_nor_image
 
 # 标志是否暂停游戏
 level = 1
@@ -244,6 +253,9 @@ bomb_supply = supply.Bomb_Supply(bg_size)
 SUPPLY_TIME = USEREVENT
 pygame.time.set_timer(SUPPLY_TIME, 30 * 1000)
 
+# 超级子弹定时器
+DOUBLE_BULLET_TIME = USEREVENT + 1
+
 # 标志是否使用超级子弹
 is_double_bullet = False
 is_Triple_Tap = False
@@ -264,16 +276,42 @@ me_destroy_index = 0
 
 
 def main():
-    global bullet1_index, bullet2_index, delay, bg1_top, bg2_top, bullets
+    global bullet1_index, bullet2_index, delay, bg1_top, bg2_top, bullets, paused, paused_image
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
+            elif event.type == MOUSEBUTTONDOWN:
+                if event.button == 1 and paused_rect.collidepoint(event.pos):
+                    paused = not paused
+                    if paused:
+                        pygame.time.set_timer(SUPPLY_TIME, 0)
+                        pygame.mixer.music.pause()
+                        pygame.mixer.pause()
+                    else:
+                        pygame.time.set_timer(SUPPLY_TIME, 30 * 1000)
+                        pygame.mixer.music.unpause()
+                        pygame.mixer.unpause()
+            elif event.type == MOUSEMOTION:
+                if paused_rect.collidepoint(event.pos):
+                    if paused:
+                        paused_image = resume_pressed_image
+                    else:
+                        paused_image = pause_pressed_image
+                else:
+                    if paused:
+                        paused_image = resume_nor_image
+                    else:
+                        paused_image = pause_nor_image
             elif event.type == INVINCIBLE_TIME:
                 me.invincible = False
                 pygame.time.set_timer(INVINCIBLE_TIME, 0)
 
-        screen.blit(background, (0, 0))
+
+        bg1_top = (bg1_top + 1) if bg1_top <= 700 else -700
+        bg2_top = (bg2_top + 1) if bg2_top <= 700 else -700
+        screen.blit(background, (0, bg1_top))
+        screen.blit(background, (0, bg2_top))
 
         
         if life_num and not paused:
@@ -322,6 +360,8 @@ def main():
             draw_me()
         elif life_num == 0:
             continueOrQuit()
+
+        screen.blit(paused_image, paused_rect)
         draw_score_bombs_lifes()
 
         delay = (delay - 1) if delay else 100
